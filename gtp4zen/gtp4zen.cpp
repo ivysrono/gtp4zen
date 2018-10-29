@@ -14,12 +14,17 @@ using namespace boost::program_options;
 static void _play_zen(CGtp *pgtp);
 
 int g_zenver = 7;
-int g_threads = 4;
-int g_maxtime = 10;			// 秒，默认10秒
+int g_threads = 1;
+int g_maxtime = 60;			// 秒，默认60秒
 int g_strength = 10000;			// 步数，默认10000步
 bool g_logfilenametime = false;
 bool g_debug = false;
-int g_think_interval = 1000;
+int g_think_interval = 200;
+float g_think_level_1 = 1.0;
+float g_think_level_2 = 1.0;
+int g_think_level_0 = 1;
+int g_resign = 10;
+
 #ifdef _DEBUG
 string g_logfile = "gtp4zen_log.txt";
 #else
@@ -44,11 +49,6 @@ inline std::string GetModuleFilePath()
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	fprintf(stderr, "gtp4zen by yongjian(QQ group:14501533, mail:80101277@qq.com)\n"\
-		"www.weiqiba.com(%s, compile: %s)\n"
-		, GTP4ZEN_VERSION, get_compile_strtime().c_str());
-	fprintf(stderr, "Usage: gtp4zen -z 7 -t 4 -T 10 -s 10000 -l mylog.txt -L -d -i 1000\n");
-
 	SYSTEM_INFO  sysInfo;
 	GetSystemInfo(&sysInfo);
 	g_threads = sysInfo.dwNumberOfProcessors;
@@ -62,7 +62,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		("threads,t",  value<int>(),    "Set the number of threads to use. (default CPU_CORES)")
 		("maxtime,T",  value<int>(),    "Set the max time for one move. (default 10 seconds)")
 		("strength,s", value<int>(),    "Set the playing strength. (default 10000)")
-		("ithink,i", value<int>(),      "thinking interval, only set 100 when play cgos. (default 1000)")
+		("ithink,i", value<int>(),      "thinking interval, only set 100 when play cgos. (default 100)")
+		("ilevel0,n", value<int>(),     "factor0. (default 1)")
+		("ilevel1,o", value<float>(),   "factor1. (default 1)")
+		("ilevel2,p", value<float>(),   "factor2. (default 1)")
+		("resign,r", value<int>(),      "resign. (default 10)")
 		("logfile,l", value<string>(),  "Enable logging and set the log file. (default none)")
 		("logfilenametime,L",           "Add timestamp after log filename. (default off)")
 		("debug,d",                     "Enable debug output to gtp shell. (default off)")
@@ -119,8 +123,20 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (vm.count("ithink")) {
 			g_think_interval = vm["ithink"].as<int>();
 			if (g_think_interval <= 0) {
-				g_think_interval = 1000;
+				g_think_interval = 200;
 			}
+		}
+		if (vm.count("ilevel0")) {
+			g_think_level_0 = vm["ilevel0"].as<int>();
+		}
+		if (vm.count("ilevel1")) {
+			g_think_level_1 = vm["ilevel1"].as<float>();
+		}
+		if (vm.count("ilevel2")) {
+			g_think_level_2 = vm["ilevel2"].as<float>();
+		}
+		if (vm.count("resign")) {
+			g_resign = vm["resign"].as<int>();
 		}
 		if (vm.count("logfile")) {
 			g_logfile = vm["logfile"].as<string>();
@@ -194,7 +210,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (!boost::filesystem::is_regular_file(zen_dll_path.c_str())) {
 		fprintf(stderr, "ERROR: zen.dll not exist?\n");
 		logprintf(L"%s", L"ERROR: zen.dll not exist?");
-		system("pause");
+		//system("pause");
 		return 0;
 	}
 
@@ -218,6 +234,7 @@ int _tmain(int argc, _TCHAR* argv[])
 static void _play_zen(CGtp *pgtp)
 {
 	std::string result;
+	std::string info_result;
 	while (true) {
 		std::string line;
 		std::getline(cin, line);
@@ -225,11 +242,10 @@ static void _play_zen(CGtp *pgtp)
 		boost::trim_if(line, boost::is_any_of("\r\n\t "));
 		std::vector<std::string> list;
 		boost::split(list, line, boost::is_any_of("\r\n\t "), boost::token_compress_on);
-		//for (auto &item : list) {
-		//	boost::trim_if(item, boost::is_any_of("\r\n\t "));
-		//}
-
+		if (line.size() == 0)
+			continue;
 		result = "";
+		info_result = "";
 		if (0 == list.size()) {
 			continue;
 		} else if ("list_commands" == list[0]) {
@@ -243,6 +259,8 @@ static void _play_zen(CGtp *pgtp)
 		} else if ("boardsize" == list[0] && list.size() >= 2) {
 			result = pgtp->boardsize(atoi(list[1].c_str()));
 		} else if ("quit" == list[0]) {
+			fprintf(stdout, "=\n\n");
+			fflush(stdout);
 			break;
 		} else if ("clear_board" == list[0]) {
 			result = pgtp->clear_board();
@@ -252,6 +270,14 @@ static void _play_zen(CGtp *pgtp)
 			result = pgtp->play(list[1].c_str(), list[2].c_str());
 		} else if ("genmove" == list[0] && list.size() >= 2) {		// genmove b
 			result = pgtp->genmove(list[1].c_str());
+			float winrate = pgtp->get_winrate();
+			if (winrate > -1 && winrate < 2 && result != "pass") {
+				char buff[1024];
+				if (list[1] == "W" || list[1] == "w")
+					winrate = 1 - winrate;
+				sprintf_s(buff, "Black winrate: %.2f", winrate * 100);
+				info_result = buff;
+			}
 		} else if ("place_free_handicap" == list[0] && list.size() >= 2) {
 			std::vector<std::string> posarray;
 			std::copy(list.begin() + 1, list.end(), posarray.begin());
@@ -276,13 +302,21 @@ static void _play_zen(CGtp *pgtp)
 				, atoi(list[2].c_str())
 				, atoi(list[3].c_str())
 				);
+		} else if ("final_score" == list[0]) {
+			result = pgtp->score();
 		} else {
-			result = "? unknown command\n";
+			result = "? unknown command [" + line + "]\n";
 		}
 		fprintf(stdout, "%s\n", result.c_str());
 		//logprintf(L"command: %s", line.c_str());
 		//logprintf(L"result: %s", result.c_str());
 		fflush(stdout);
+		if (info_result.size() > 0)
+		{
+			int ret = fprintf(stderr, "%s\n", info_result.c_str());
+			if (ret > 0)
+				fflush(stderr);
+		}
 	}
 }
 
@@ -318,21 +352,23 @@ void logprintf(const TCHAR *_Format, ...)
 
 	// 写文件
 	ofstream out;
-	out.open(g_logfile.c_str(), ios::app | ios::out | ios::binary);
-	if (out.is_open()) {
-		SYSTEMTIME sys;
-		GetLocalTime(&sys);
-		TCHAR timestr[128] = L"";
-		wsprintf(timestr
-			, L"%d-%02d-%02d %02d:%02d:%02d.%04d | "
-			, sys.wYear, sys.wMonth, sys.wDay
-			, sys.wHour, sys.wMinute, sys.wSecond
-			, sys.wMilliseconds
-			);
-		out << CWtoA(timestr);
-		out << CWtoA(pszBuffer);
-		out << "\r\n";
-		out.close();
+	if (g_logfile.size() > 0) {
+		out.open(g_logfile.c_str(), ios::app | ios::out | ios::binary);
+		if (out.is_open()) {
+			SYSTEMTIME sys;
+			GetLocalTime(&sys);
+			TCHAR timestr[128] = L"";
+			wsprintf(timestr
+				, L"%d-%02d-%02d %02d:%02d:%02d.%04d | "
+				, sys.wYear, sys.wMonth, sys.wDay
+				, sys.wHour, sys.wMinute, sys.wSecond
+				, sys.wMilliseconds
+				);
+			out << CWtoA(timestr);
+			out << CWtoA(pszBuffer);
+			out << "\r\n";
+			out.close();
+		}
 	}
 }
 

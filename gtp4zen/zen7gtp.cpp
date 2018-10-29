@@ -8,8 +8,12 @@
 #endif
 
 typedef void(LIBZENAPI *_ZenClearBoard)(void);
-typedef int(LIBZENAPI *_ZenGetNextColor)(void);
+typedef int(LIBZENAPI *_ZenGetBoardColor)(int, int);
+typedef void(LIBZENAPI *_ZenGetTerritoryStatictics)(int(*const)[19]);
 typedef void(LIBZENAPI *_ZenGetTopMoveInfo)(int, int &, int &, int &, float &, char *, int);
+typedef int(LIBZENAPI *_ZenGetNextColor)(void);
+typedef int(LIBZENAPI *_ZenGetNumBlackPrisoners)(void);
+typedef int(LIBZENAPI *_ZenGetNumWhitePrisoners)(void);
 typedef void(LIBZENAPI *_ZenInitialize)(char const *);
 typedef bool(LIBZENAPI *_ZenIsInitialized)(void);
 typedef bool(LIBZENAPI *_ZenIsThinking)(void);
@@ -22,6 +26,7 @@ typedef void(LIBZENAPI *_ZenSetNumberOfSimulations)(int);
 typedef void(LIBZENAPI *_ZenSetNumberOfThreads)(int);
 typedef void(LIBZENAPI *_ZenSetPnLevel)(int);
 typedef void(LIBZENAPI *_ZenSetPnWeight)(float);
+typedef void(LIBZENAPI *_ZenSetVnMixRate)(float);
 typedef void(LIBZENAPI *_ZenStartThinking)(int);
 typedef void(LIBZENAPI *_ZenStopThinking)(void);
 typedef bool(LIBZENAPI *_ZenUndo)(int);
@@ -30,25 +35,28 @@ struct _zen_dll_proxy {
 	// 内部变量
 	HMODULE			m_hModule;
 	std::string		m_dllpath;
-	int			m_boardsize;
+	int				m_boardsize;
+	float			m_komi;
 	ptime			m_maintime;
 	ptime			m_lefttime;
 	lua_State		*m_L;
-	int			m_curmovenum;
+	int				m_curmovenum;
 	std::string		winrate;
+	float m_winrate;
 
 	// 导出函数
 	//ZenAddStone ZenAddStone1;
 	_ZenClearBoard ZenClearBoard;
 	//void (*ZenFixedHandicap)(int);
 	//void (*ZenGetBestMoveRate)(void);
-	//void (*ZenGetBoardColor)(int, int);
+	_ZenGetBoardColor ZenGetBoardColor;
 	//void (*ZenGetHistorySize)(void);
 	_ZenGetNextColor ZenGetNextColor;
-	//void (*ZenGetNumBlackPrisoners)(void);
-	//void (*ZenGetNumWhitePrisoners)(void);
+	_ZenGetNumBlackPrisoners ZenGetNumBlackPrisoners;
+	_ZenGetNumWhitePrisoners ZenGetNumWhitePrisoners;
 	//void (*ZenGetPriorKnowledge)(int(*const)[19]);
 	//void (*ZenGetTerritoryStatictics)(int(*const)[19]);
+	_ZenGetTerritoryStatictics ZenGetTerritoryStatictics;
 	_ZenGetTopMoveInfo ZenGetTopMoveInfo;
 	_ZenInitialize ZenInitialize;
 	_ZenIsInitialized ZenIsInitialized;
@@ -68,6 +76,7 @@ struct _zen_dll_proxy {
 	_ZenSetNumberOfThreads ZenSetNumberOfThreads;
 	_ZenSetPnLevel ZenSetPnLevel;
 	_ZenSetPnWeight ZenSetPnWeight;
+	_ZenSetVnMixRate ZenSetVnMixRate;
 	_ZenStartThinking ZenStartThinking;
 	_ZenStopThinking ZenStopThinking;
 	_ZenUndo ZenUndo;
@@ -83,6 +92,56 @@ CZen7Gtp::CZen7Gtp() : m_proxy(NULL)
 CZen7Gtp::~CZen7Gtp()
 {
 	unload();
+}
+
+float CZen7Gtp::get_winrate()
+{
+	return ((_zen_dll_proxy*)m_proxy)->m_winrate;;
+}
+
+std::string CZen7Gtp::score()
+{
+	int territory[19][19];
+	((_zen_dll_proxy*)m_proxy)->ZenGetTerritoryStatictics(territory);
+	float moku_w = ((_zen_dll_proxy*)m_proxy)->ZenGetNumWhitePrisoners(), moku_b = ((_zen_dll_proxy*)m_proxy)->ZenGetNumBlackPrisoners();
+	for (int j = 0; j < ((_zen_dll_proxy*)m_proxy)->m_boardsize; ++j)
+	{
+		for (int i = 0; i < ((_zen_dll_proxy*)m_proxy)->m_boardsize; ++i)
+		{
+			int color = ((_zen_dll_proxy*)m_proxy)->ZenGetBoardColor(i, j);
+			if (territory[j][i] <= -500)
+			{
+				if (color == 2)
+					moku_w += 2;
+				else if (color == 0)
+					moku_w += 1;
+			}
+			else if (territory[j][i] >= 500)
+			{
+				if (color == 1)
+					moku_b += 2;
+				else if (color == 0)
+					moku_b += 1;
+			}
+		}
+	}
+	moku_w += ((_zen_dll_proxy*)m_proxy)->m_komi;
+	if (moku_b > moku_w)
+	{
+		char result[100];
+		sprintf_s(result, "= B+%g\n", moku_b - moku_w);
+		return result;
+	}
+	else if (moku_b < moku_w)
+	{
+		char result[100];
+		sprintf_s(result, "= W+%g\n", moku_w - moku_b);
+		return result;
+	}
+	else
+	{
+		return "= Draw\n";
+	}
 }
 
 // cur_move_num：当前手数，time_left：剩余时间
@@ -103,22 +162,6 @@ int CZen7Gtp::lua_genmove_calctime(int cur_move_num, int time_left)
 	return result;
 }
 
-// 
-float CZen7Gtp::lua_komi_get()
-{
-	// 执行初始化函数，注意平衡堆栈，lua_gettop(m_L)可以获取当前栈使用
-	int ret = lua_getglobal(((_zen_dll_proxy*)m_proxy)->m_L, "komi");
-	float result = -1;
-	if (ret > 0) {
-		lua_pcall(((_zen_dll_proxy*)m_proxy)->m_L, 0, 1, 0);
-		result = (float)luaL_checknumber(((_zen_dll_proxy*)m_proxy)->m_L, 1);
-	} else {
-		lua_pop(((_zen_dll_proxy*)m_proxy)->m_L, 1);
-	}
-	lua_settop(((_zen_dll_proxy*)m_proxy)->m_L, 0);
-	return result;
-}
-
 bool CZen7Gtp::load(std::string zen_dll_path, std::string lua_engine_path)
 {
 #if 0
@@ -135,6 +178,7 @@ bool CZen7Gtp::load(std::string zen_dll_path, std::string lua_engine_path)
 	unload();
 
 	m_proxy = new _zen_dll_proxy();
+	((_zen_dll_proxy*)m_proxy)->m_komi = 6.5f;
 	((_zen_dll_proxy*)m_proxy)->m_L = luaL_newstate();
 	luaL_openlibs(((_zen_dll_proxy*)m_proxy)->m_L);
 	luaL_dostring(((_zen_dll_proxy*)m_proxy)->m_L, "package.path = package.path .. ';./?.lua'");
@@ -156,10 +200,18 @@ bool CZen7Gtp::load(std::string zen_dll_path, std::string lua_engine_path)
 	HMODULE	 hModule = ((_zen_dll_proxy*)m_proxy)->m_hModule;
 	((_zen_dll_proxy*)m_proxy)->ZenClearBoard = (_ZenClearBoard)GetProcAddress(hModule, "?ZenClearBoard@@YAXXZ");
 	assert(((_zen_dll_proxy*)m_proxy)->ZenClearBoard);
+	((_zen_dll_proxy*)m_proxy)->ZenGetBoardColor = (_ZenGetBoardColor)GetProcAddress(hModule, "?ZenGetBoardColor@@YAHHH@Z");
+	assert(((_zen_dll_proxy*)m_proxy)->ZenGetBoardColor);
 	((_zen_dll_proxy*)m_proxy)->ZenGetNextColor = (_ZenGetNextColor)GetProcAddress(hModule, "?ZenGetNextColor@@YAHXZ");
 	assert(((_zen_dll_proxy*)m_proxy)->ZenGetNextColor);
+	((_zen_dll_proxy*)m_proxy)->ZenGetTerritoryStatictics = (_ZenGetTerritoryStatictics)GetProcAddress(hModule, "?ZenGetTerritoryStatictics@@YAXQAY0BD@H@Z");
+	assert(((_zen_dll_proxy*)m_proxy)->ZenGetTerritoryStatictics);
 	((_zen_dll_proxy*)m_proxy)->ZenGetTopMoveInfo = (_ZenGetTopMoveInfo)GetProcAddress(hModule, "?ZenGetTopMoveInfo@@YAXHAAH00AAMPADH@Z");
 	assert(((_zen_dll_proxy*)m_proxy)->ZenGetTopMoveInfo);
+	((_zen_dll_proxy*)m_proxy)->ZenGetNumBlackPrisoners = (_ZenGetNumBlackPrisoners)GetProcAddress(hModule, "?ZenGetNumBlackPrisoners@@YAHXZ");
+	assert(((_zen_dll_proxy*)m_proxy)->ZenGetNumBlackPrisoners);
+	((_zen_dll_proxy*)m_proxy)->ZenGetNumWhitePrisoners = (_ZenGetNumWhitePrisoners)GetProcAddress(hModule, "?ZenGetNumWhitePrisoners@@YAHXZ");
+	assert(((_zen_dll_proxy*)m_proxy)->ZenGetNumWhitePrisoners);
 	((_zen_dll_proxy*)m_proxy)->ZenInitialize = (_ZenInitialize)GetProcAddress(hModule, "?ZenInitialize@@YAXPBD@Z");
 	assert(((_zen_dll_proxy*)m_proxy)->ZenInitialize);
 	((_zen_dll_proxy*)m_proxy)->ZenIsInitialized = (_ZenIsInitialized)GetProcAddress(hModule, "?ZenIsInitialized@@YA_NXZ");
@@ -184,6 +236,8 @@ bool CZen7Gtp::load(std::string zen_dll_path, std::string lua_engine_path)
 	assert(((_zen_dll_proxy*)m_proxy)->ZenSetPnLevel);
 	((_zen_dll_proxy*)m_proxy)->ZenSetPnWeight = (_ZenSetPnWeight)GetProcAddress(hModule, "?ZenSetPnWeight@@YAXM@Z");
 	assert(((_zen_dll_proxy*)m_proxy)->ZenSetPnWeight);
+	((_zen_dll_proxy*)m_proxy)->ZenSetVnMixRate = (_ZenSetVnMixRate)GetProcAddress(hModule, "?ZenSetVnMixRate@@YAXM@Z");
+	assert(((_zen_dll_proxy*)m_proxy)->ZenSetVnMixRate);
 	((_zen_dll_proxy*)m_proxy)->ZenStartThinking = (_ZenStartThinking)GetProcAddress(hModule, "?ZenStartThinking@@YAXH@Z");
 	assert(((_zen_dll_proxy*)m_proxy)->ZenStartThinking);
 	((_zen_dll_proxy*)m_proxy)->ZenStopThinking = (_ZenStopThinking)GetProcAddress(hModule, "?ZenStopThinking@@YAXXZ");
@@ -213,8 +267,6 @@ bool CZen7Gtp::load(std::string zen_dll_path, std::string lua_engine_path)
 	fprintf(stderr, "zen.dll(zen7) initialize %s.\n", is_init ? "success" : "failed");
 	logprintf(L"zen.dll(zen7) initialize %s.", is_init ? L"success" : L"failed");
 	fflush(stderr);
-	if (!g_debug)
-		fclose(stderr);
 	return is_init;
 }
 
@@ -294,13 +346,9 @@ std::string CZen7Gtp::boardsize(int size)
 std::string CZen7Gtp::komi(float k)
 {
 	logprintf(L"komi(%.2f)", k);
-	if (lua_komi_get() >= 0) {
-		logprintf(L"\tlua set komi: %f", lua_komi_get());
-		((_zen_dll_proxy*)m_proxy)->ZenSetKomi(lua_komi_get());
-		return "= \n";
-	}
 
 	if (k >= 0 && k <= 300) {
+		((_zen_dll_proxy*)m_proxy)->m_komi = k;
 		((_zen_dll_proxy*)m_proxy)->ZenSetKomi(k);
 		return "= \n";
 	} else {
@@ -374,6 +422,7 @@ std::string CZen7Gtp::__find_best_move(bool debug, int &x, int &y, int &simulati
 	int N = -1;
 	char S[256];	// 全部手数（含当前手）
 #if 1
+	std::string result = "pass";
 	for (int i = 4; i >= 0; i--) {	// zen一般给出5个选点
 		((_zen_dll_proxy*)m_proxy)->ZenGetTopMoveInfo(i, x, y, simulation, W, S, 99);
 		//XTRACE("%d:  %d-%d, P:%d, W:%f,  %s\n", i, x, y, simulation, W, S);
@@ -395,17 +444,29 @@ std::string CZen7Gtp::__find_best_move(bool debug, int &x, int &y, int &simulati
 			fflush(stderr);
 		}
 		if (0 == i) {
-			if (strstr(S, "pass"))
+			if (strstr(S, "pass") == S) {
 				return "pass";
+			}
 
-			std::string result;
+			if (W > -1 && W * 100 < g_resign) {
+				result = "resign";
+				return result;
+			}
+
 			if (x >= 0 && y >= 0 && simulation >= 0) {
 				result = __num2ansi(x, y, ((_zen_dll_proxy*)m_proxy)->m_boardsize);
-			} else {
-				result = "resign";
+			}
+			else {
+				//result = "resign";
 				result = "pass";
 			}
 			return result;
+		} else {
+			if (strstr(S, "pass") != S) {
+				if (x >= 0 && y >= 0 && simulation >= 0) {
+					result = __num2ansi(x, y, ((_zen_dll_proxy*)m_proxy)->m_boardsize);
+				}
+			}
 		}
 	}
 #else
@@ -419,7 +480,7 @@ std::string CZen7Gtp::__find_best_move(bool debug, int &x, int &y, int &simulati
 	//}
 	//return result;
 #endif
-	return "";
+	return "pass";
 }
 
 // 指定最大时间（毫秒），最多步数
@@ -432,6 +493,10 @@ std::string CZen7Gtp::__genmove(std::string _color, int _maxtime, int _strength)
 	int color = ("w" == _color ? GTP4ZEN_COLOR_WHITE : GTP4ZEN_COLOR_BLACK);
 
 	// 落子
+	((_zen_dll_proxy*)m_proxy)->ZenSetNumberOfSimulations(_strength);
+	((_zen_dll_proxy*)m_proxy)->ZenSetPnLevel(g_think_level_0);
+	((_zen_dll_proxy*)m_proxy)->ZenSetPnWeight(g_think_level_1);
+	((_zen_dll_proxy*)m_proxy)->ZenSetVnMixRate(g_think_level_2);
 	((_zen_dll_proxy*)m_proxy)->ZenStartThinking(color);
 	ptime time_start, time_now;
 	millisec_posix_time_system_config::time_duration_type time_elapse;
@@ -484,6 +549,7 @@ std::string CZen7Gtp::__genmove(std::string _color, int _maxtime, int _strength)
 	play(_color, result);
 	char winrate_str[32];
 	sprintf_s(winrate_str, 32, "%.2f", W * 100);
+	((_zen_dll_proxy*)m_proxy)->m_winrate = W;
 	((_zen_dll_proxy*)m_proxy)->winrate = winrate_str;
 	return "= " + result + "\n";
 }

@@ -9,7 +9,6 @@
 
 #include <stdio.h>
 #include <tchar.h>
-#include <vld.h>
 
 
 // TODO: reference additional headers your program requires here
@@ -25,7 +24,6 @@ using namespace boost::gregorian;
 using namespace boost::posix_time;
 
 #include "win32xx.h"
-#include "xtrace.h"
 #include "lua/lua.hpp"
 
 extern int g_zenver;
@@ -35,6 +33,10 @@ extern int g_strength;
 extern string g_logfile;
 extern bool g_debug;
 extern int g_think_interval;
+extern float g_think_level_1;
+extern float g_think_level_2;
+extern int g_think_level_0;
+extern int g_resign;
 
 extern int __ansi2num(char ch);
 extern std::string __num2ansi(int x, int y, int boardsize);

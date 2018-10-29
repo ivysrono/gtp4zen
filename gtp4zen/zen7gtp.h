@@ -28,12 +28,13 @@ public:
 	std::string genmove(std::string color);
 	std::string time_settings(int main_time, int byo_yomi_time, int byo_yomi_stones);
 	std::string time_left(std::string color, int time, int stones);
+	std::string score();
+	float get_winrate();
 
 private:
 	std::string __genmove(std::string _color, int _maxtime, int _strength);
 	std::string __find_best_move(bool debug, int &x, int &y, int &simulation, float &W);
 	int lua_genmove_calctime(int cur_move_num, int time_left);
-	float lua_komi_get();
 
 private:
 	void	*m_proxy;

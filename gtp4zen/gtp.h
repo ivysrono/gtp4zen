@@ -23,6 +23,8 @@ public:
 	virtual std::string genmove(std::string color) = 0;
 	virtual std::string time_settings(int main_time, int byo_yomi_time, int byo_yomi_stones) = 0;
 	virtual std::string time_left(std::string color, int time, int stones) = 0;
+	virtual std::string score() = 0;
+	virtual float get_winrate() = 0;
 };
 
 #endif
