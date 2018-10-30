@@ -22,10 +22,3 @@ function genmove_calctime(cur_move_num, time_left)
 		return 500
 	end
 end
-
-
--- 返回贴目，当这个函数存在时gtp的komi指令自动失效
--- 这个函数也可以删掉
-function komi()
-	return 7.5
-end
