@@ -30,7 +30,7 @@ C:\Users\clock\Desktop>gtp4zen.exe --help
       -L [ --logfilenametime ]  Add timestamp after log filename. (default off)
       -d [ --debug ]            Enable debug output to gtp shell. (default off)
 
-其中 n,o,p 三个参数由你使用zen6还是zen7决定其含义，具体可参考Github项目GoAIRating
+其中 n,o,p 三个参数由你使用zen6还是zen7决定其含义，具体可参考Github项目GoAIRating  
 以上3个参数如不指定，棋力将达不到预想值。  
 如果你单纯需要最强的棋力，如果是zen6，设置-n1 -o1 -p1（即默认值），如果是zen7，设置-n3 -o1 -p0.75  
 参数 r 设置胜率低于多少时认输
