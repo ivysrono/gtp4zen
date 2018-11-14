@@ -37,6 +37,7 @@ extern float g_think_level_1;
 extern float g_think_level_2;
 extern int g_think_level_0;
 extern int g_resign;
+extern bool g_chinese_rule;
 
 extern int __ansi2num(char ch);
 extern std::string __num2ansi(int x, int y, int boardsize);

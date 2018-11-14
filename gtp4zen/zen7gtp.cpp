@@ -103,25 +103,48 @@ std::string CZen7Gtp::score()
 {
 	int territory[19][19];
 	((_zen_dll_proxy*)m_proxy)->ZenGetTerritoryStatictics(territory);
-	float moku_w = ((_zen_dll_proxy*)m_proxy)->ZenGetNumWhitePrisoners(), moku_b = ((_zen_dll_proxy*)m_proxy)->ZenGetNumBlackPrisoners();
-	for (int j = 0; j < ((_zen_dll_proxy*)m_proxy)->m_boardsize; ++j)
+	float moku_w = 0, moku_b = 0;
+	if (g_chinese_rule)
 	{
-		for (int i = 0; i < ((_zen_dll_proxy*)m_proxy)->m_boardsize; ++i)
+		for (int j = 0; j < ((_zen_dll_proxy*)m_proxy)->m_boardsize; ++j)
 		{
-			int color = ((_zen_dll_proxy*)m_proxy)->ZenGetBoardColor(i, j);
-			if (territory[j][i] <= -500)
+			for (int i = 0; i < ((_zen_dll_proxy*)m_proxy)->m_boardsize; ++i)
 			{
-				if (color == 2)
-					moku_w += 2;
-				else if (color == 0)
+				int color = ((_zen_dll_proxy*)m_proxy)->ZenGetBoardColor(i, j);
+				if (territory[j][i] <= -500)
+				{
 					moku_w += 1;
-			}
-			else if (territory[j][i] >= 500)
-			{
-				if (color == 1)
-					moku_b += 2;
-				else if (color == 0)
+				}
+				else if (territory[j][i] >= 500)
+				{
 					moku_b += 1;
+				}
+			}
+		}
+	}
+	else
+	{
+		moku_w = ((_zen_dll_proxy*)m_proxy)->ZenGetNumWhitePrisoners();
+		moku_b = ((_zen_dll_proxy*)m_proxy)->ZenGetNumBlackPrisoners();
+		for (int j = 0; j < ((_zen_dll_proxy*)m_proxy)->m_boardsize; ++j)
+		{
+			for (int i = 0; i < ((_zen_dll_proxy*)m_proxy)->m_boardsize; ++i)
+			{
+				int color = ((_zen_dll_proxy*)m_proxy)->ZenGetBoardColor(i, j);
+				if (territory[j][i] <= -500)
+				{
+					if (color == 2)
+						moku_w += 2;
+					else if (color == 0)
+						moku_w += 1;
+				}
+				else if (territory[j][i] >= 500)
+				{
+					if (color == 1)
+						moku_b += 2;
+					else if (color == 0)
+						moku_b += 1;
+				}
 			}
 		}
 	}

@@ -8,7 +8,7 @@
 请参考gtp指令手册(http://www.lysator.liu.se/~gunnar/gtp/)或者使用sabaki等图形界面工具  
 2. 如果使用zen6的zen.dll，需要设置参数 gtp4zen.exe -z6
 3. gtp4zen.exe所在的文件夹如果存在gtp4zen.lua，命令行-T参数自动失效并使用gtp4zen.lua的时间控制，
-这个脚本用于精细化时间控制，如果不明白用途可以★★删除★★gtp4zen.lua，默认★★文件存在并生效★★  
+这个脚本用于精细化时间控制，如果不明白用途可以删除gtp4zen.lua，文件存在即表示生效  
 4. gtp4zen.exe --help输出帮助,-t是线程数（默认和cpu核数量相同），-T最大思考时间，-s最大计算步数，-l指定log文件，-d会输出调试信息到gtpshell，帮助信息如下：
 
 C:\Users\clock\Desktop>gtp4zen.exe --help

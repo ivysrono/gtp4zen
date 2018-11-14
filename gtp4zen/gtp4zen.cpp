@@ -24,6 +24,7 @@ float g_think_level_1 = 1.0;
 float g_think_level_2 = 1.0;
 int g_think_level_0 = 1;
 int g_resign = 10;
+bool g_chinese_rule = true;
 
 #ifdef _DEBUG
 string g_logfile = "gtp4zen_log.txt";
@@ -70,6 +71,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		("logfile,l", value<string>(),  "Enable logging and set the log file. (default none)")
 		("logfilenametime,L",           "Add timestamp after log filename. (default off)")
 		("debug,d",                     "Enable debug output to gtp shell. (default off)")
+		("jpn_rules",                   "Set to Japanese rules. (default Chinese rules)")
 		;
 	/*
 	СЎПо -t -T -M -m -l -k -w -s -f
@@ -140,6 +142,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 		if (vm.count("logfile")) {
 			g_logfile = vm["logfile"].as<string>();
+		}
+		if (vm.count("jpn_rules")) {
+			g_chinese_rule = false;
 		}
 
 		if (error_options) {
