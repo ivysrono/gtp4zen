@@ -1,4 +1,4 @@
-﻿1.把zen6或zen7的zen.dll拷贝到gtp4zen.exe所在的文件夹，并重命名为zen6.dll或zen7.dll，运行即可，只需要gtp4zen.exe和zen.dll这2个文件
+﻿1.把zen6或zen7的zen.dll拷贝到gtp4zen.exe所在的文件夹，配置参数运行即可，只需要gtp4zen.exe和zen.dll这2个文件
 请参考gtp指令手册(http://www.lysator.liu.se/~gunnar/gtp/)或者使用sabaki等图形界面工具
 
 
@@ -31,7 +31,8 @@ Options:
 如果你单纯需要最强的棋力，如果是zen6，设置-n1 -o1 -p1（即默认值），如果是zen7，设置-n3 -o1 -p0.75
 参数 r 设置胜率低于多少时认输
 
-4.如果使用zen6的zen.dll，需要设置参数 gtp4zen.exe -z6，同时把dll重命名为zen6.dll
+4.如果使用zen6的zen.dll，需要设置参数 gtp4zen.exe -z6
+如果你需要同时使用zen6和zen7的dll，请在gtp4zen.exe所在的文件夹下再建立两个子目录并分别命名为"6"和"7"，再把两个dll复制进去
 cgos遛狗建议参数：gtp4zen.exe -T5 -i100, 或者使用gtp4zen.lua脚本来控制时间
 
 

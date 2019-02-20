@@ -6,10 +6,11 @@
 
 1. 把zen7的zen.dll拷贝到gtp4zen.exe所在的文件夹，重命名为zen7.dll，再运行即可，只需要gtp4zen.exe和zen7.dll这2个文件
 请参考gtp指令手册(http://www.lysator.liu.se/~gunnar/gtp/)或者使用sabaki等图形界面工具  
-2. 如果使用zen6的zen.dll，需要重命名为zen6.dll，且设置参数 gtp4zen.exe -z6
+2. 如果使用zen6的zen.dll，需要设置参数 gtp4zen.exe -z6。如果你需要**同时使用zen6和zen7的dll**，请在gtp4zen.exe所在的文件夹下再建立两个子目录并分别命名为"6"和"7"，再把两个dll复制进去
 3. gtp4zen.exe所在的文件夹如果存在gtp4zen.lua，命令行-T参数自动失效并使用gtp4zen.lua的时间控制，
 这个脚本用于精细化时间控制，如果不明白用途可以删除gtp4zen.lua，文件存在即表示生效  
-4. gtp4zen.exe --help输出帮助,-t是线程数（默认和cpu核数量相同），-T最大思考时间，-s最大计算步数，-l指定log文件，-d会输出调试信息到gtpshell，帮助信息如下：
+4. 
+5. gtp4zen.exe --help输出帮助,-t是线程数（默认和cpu核数量相同），-T最大思考时间，-s最大计算步数，-l指定log文件，-d会输出调试信息到gtpshell，帮助信息如下：
 
 C:\Users\clock\Desktop>gtp4zen.exe --help
 

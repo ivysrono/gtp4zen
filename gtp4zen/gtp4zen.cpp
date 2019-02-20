@@ -212,17 +212,26 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	std::string zen_dll_path = GetModuleFilePath();
 	std::string lua_engine_path = GetModuleFilePath() + "gtp4zen.lua";
-	if (!boost::filesystem::is_regular_file(zen_dll_path.c_str())) {
+	if (7 == g_zenver && boost::filesystem::is_regular_file((zen_dll_path + "7\\zen.dll").c_str())) {
+	}
+	else if (7 == g_zenver && boost::filesystem::is_regular_file((zen_dll_path + "6\\zen.dll").c_str())) {
+		g_zenver = 6;
+	}
+	else if (6 == g_zenver && boost::filesystem::is_regular_file((zen_dll_path + "6\\zen.dll").c_str())) {
+	}
+	else if (boost::filesystem::is_regular_file((zen_dll_path + "zen.dll").c_str())) {
+	}
+	else {
 		fprintf(stderr, "ERROR: zen.dll not exist?\n");
 		logprintf(L"%s", L"ERROR: zen.dll not exist?");
 		//system("pause");
-		return 0;
+		return 1;
 	}
 
 	if (6 == g_zenver) {
 		CZen6Gtp gtp6;
 		CGtp *pgtp = &gtp6;
-		if (pgtp->load((zen_dll_path + "zen6.dll").c_str(), lua_engine_path.c_str()))
+		if (pgtp->load((zen_dll_path + "6\\zen.dll").c_str(), lua_engine_path.c_str()))
 			_play_zen(pgtp);
 		else if (pgtp->load((zen_dll_path + "zen.dll").c_str(), lua_engine_path.c_str()))
 			_play_zen(pgtp);
@@ -230,7 +239,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	} else if (7 == g_zenver) {
 		CZen7Gtp gtp7;
 		CGtp *pgtp = &gtp7;
-		if (pgtp->load((zen_dll_path + "zen7.dll").c_str(), lua_engine_path.c_str()))
+		if (pgtp->load((zen_dll_path + "7\\zen.dll").c_str(), lua_engine_path.c_str()))
 			_play_zen(pgtp);
 		else if (pgtp->load((zen_dll_path + "zen.dll").c_str(), lua_engine_path.c_str()))
 			_play_zen(pgtp);
