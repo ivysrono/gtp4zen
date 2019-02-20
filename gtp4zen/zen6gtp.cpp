@@ -383,8 +383,14 @@ std::string CZen6Gtp::komi(float k)
 std::string CZen6Gtp::free_handicap(const std::vector<std::string> &posarray)
 {
 	logprintf(L"set_free_handicap()/place_free_handicap()");
+	bool first = true;
 	for (auto &item : posarray) {
+		if (!first)
+		{
+			play("w", "pass");
+		}
 		play("b", item.c_str());
+		first = false;
 	}
 	return "= \n";
 }
@@ -468,7 +474,7 @@ std::string CZen6Gtp::__find_best_move(bool debug, int &x, int &y, int &simulati
 			fflush(stderr);
 		}
 		if (0 == i) {
-			if (strstr(S, "pass") == S) {
+			if (strstr(S, "pass") == S || simulation == 0) {
 				return "pass";
 			}
 

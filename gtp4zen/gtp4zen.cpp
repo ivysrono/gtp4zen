@@ -210,7 +210,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	logprintf(L"每手最大思考时间（秒）：%d", g_maxtime);
 	logprintf(L"每手最大模拟步数（步）：%d", g_strength);
 
-	std::string zen_dll_path = GetModuleFilePath() + "zen.dll";
+	std::string zen_dll_path = GetModuleFilePath();
 	std::string lua_engine_path = GetModuleFilePath() + "gtp4zen.lua";
 	if (!boost::filesystem::is_regular_file(zen_dll_path.c_str())) {
 		fprintf(stderr, "ERROR: zen.dll not exist?\n");
@@ -222,13 +222,17 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (6 == g_zenver) {
 		CZen6Gtp gtp6;
 		CGtp *pgtp = &gtp6;
-		if (pgtp->load(zen_dll_path.c_str(), lua_engine_path.c_str()))
+		if (pgtp->load((zen_dll_path + "zen6.dll").c_str(), lua_engine_path.c_str()))
+			_play_zen(pgtp);
+		else if (pgtp->load((zen_dll_path + "zen.dll").c_str(), lua_engine_path.c_str()))
 			_play_zen(pgtp);
 		pgtp->unload();
 	} else if (7 == g_zenver) {
 		CZen7Gtp gtp7;
 		CGtp *pgtp = &gtp7;
-		if (pgtp->load(zen_dll_path.c_str(), lua_engine_path.c_str()))
+		if (pgtp->load((zen_dll_path + "zen7.dll").c_str(), lua_engine_path.c_str()))
+			_play_zen(pgtp);
+		else if (pgtp->load((zen_dll_path + "zen.dll").c_str(), lua_engine_path.c_str()))
 			_play_zen(pgtp);
 		pgtp->unload();
 	}
@@ -285,11 +289,15 @@ static void _play_zen(CGtp *pgtp)
 			}
 		} else if ("place_free_handicap" == list[0] && list.size() >= 2) {
 			std::vector<std::string> posarray;
-			std::copy(list.begin() + 1, list.end(), posarray.begin());
+			for (auto it = list.begin() + 1; it != list.end(); ++it) {
+				posarray.push_back(*it);
+			}
 			result = pgtp->free_handicap(posarray);
 		} else if ("set_free_handicap" == list[0] && list.size() >= 2) {
 			std::vector<std::string> posarray;
-			std::copy(list.begin() + 1, list.end(), posarray.begin());
+			for (auto it = list.begin() + 1; it != list.end(); ++it) {
+				posarray.push_back(*it);
+			}
 			result = pgtp->free_handicap(posarray);
 		} else if ("winrate" == list[0]) {
 			result = pgtp->winrate();
