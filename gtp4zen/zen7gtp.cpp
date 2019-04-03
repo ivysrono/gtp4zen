@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include <assert.h>
 #include <Windows.h>
 #include "zen7gtp.h"
@@ -32,7 +32,7 @@ typedef void(LIBZENAPI *_ZenStopThinking)(void);
 typedef bool(LIBZENAPI *_ZenUndo)(int);
 
 struct _zen_dll_proxy {
-	// ÄÚ²¿±äÁ¿
+	// å†…éƒ¨å˜é‡
 	HMODULE			m_hModule;
 	std::string		m_dllpath;
 	int				m_boardsize;
@@ -44,7 +44,7 @@ struct _zen_dll_proxy {
 	std::string		winrate;
 	float m_winrate;
 
-	// µ¼³öº¯Êı
+	// å¯¼å‡ºå‡½æ•°
 	//ZenAddStone ZenAddStone1;
 	_ZenClearBoard ZenClearBoard;
 	//void (*ZenFixedHandicap)(int);
@@ -167,10 +167,10 @@ std::string CZen7Gtp::score()
 	}
 }
 
-// cur_move_num£ºµ±Ç°ÊÖÊı£¬time_left£ºÊ£ÓàÊ±¼ä
+// cur_move_numï¼šå½“å‰æ‰‹æ•°ï¼Œtime_leftï¼šå‰©ä½™æ—¶é—´
 int CZen7Gtp::lua_genmove_calctime(int cur_move_num, int time_left)
 {
-	// Ö´ĞĞ³õÊ¼»¯º¯Êı£¬×¢ÒâÆ½ºâ¶ÑÕ»£¬lua_gettop(m_L)¿ÉÒÔ»ñÈ¡µ±Ç°Õ»Ê¹ÓÃ
+	// æ‰§è¡Œåˆå§‹åŒ–å‡½æ•°ï¼Œæ³¨æ„å¹³è¡¡å †æ ˆï¼Œlua_gettop(m_L)å¯ä»¥è·å–å½“å‰æ ˆä½¿ç”¨
 	int ret = lua_getglobal(((_zen_dll_proxy*)m_proxy)->m_L, "genmove_calctime");
 	int result = -1;
 	if (ret > 0) {
@@ -194,10 +194,10 @@ bool CZen7Gtp::load(std::string zen_dll_path, std::string lua_engine_path)
 	if (!boost::ends_with(boost_path_str, "zen.dll"))
 		fprintf(stderr, "WARNING: filename should be zen.dll!\n", zen_dll_path.c_str());
 	else
-		logprintf(L"dllÎÄ¼şÃû¼ì²âÕı³£");
+		logprintf(L"dllæ–‡ä»¶åæ£€æµ‹æ­£å¸¸");
 #endif
 
-	// Õı³£Á÷³Ì
+	// æ­£å¸¸æµç¨‹
 	unload();
 
 	m_proxy = new _zen_dll_proxy();
@@ -215,10 +215,10 @@ bool CZen7Gtp::load(std::string zen_dll_path, std::string lua_engine_path)
 	if (NULL == ((_zen_dll_proxy*)m_proxy)->m_hModule) {
 		fprintf(stderr, "load %s failed(errno: %d), zen.dll not exist?\n"
 			, zen_dll_path.c_str(), GetLastError());
-		logprintf(L"dll¼ÓÔØÊ§°Ü£¬zen.dll²»´æÔÚ£¿");
+		logprintf(L"dllåŠ è½½å¤±è´¥ï¼Œzen.dllä¸å­˜åœ¨ï¼Ÿ");
 		return false;
 	}
-	logprintf(L"dll¼ÓÔØÕı³£");
+	logprintf(L"dllåŠ è½½æ­£å¸¸");
 
 	HMODULE	 hModule = ((_zen_dll_proxy*)m_proxy)->m_hModule;
 	((_zen_dll_proxy*)m_proxy)->ZenClearBoard = (_ZenClearBoard)GetProcAddress(hModule, "?ZenClearBoard@@YAXXZ");
@@ -272,9 +272,9 @@ bool CZen7Gtp::load(std::string zen_dll_path, std::string lua_engine_path)
 		fprintf(stderr, "zen.dll not copy from zen7 version?\n");
 		return false;
 	}
-	logprintf(L"dllº¯Êı¶¨Î»Õı³£");
+	logprintf(L"dllå‡½æ•°å®šä½æ­£å¸¸");
 
-	// ³õÊ¼»¯
+	// åˆå§‹åŒ–
 	((_zen_dll_proxy*)m_proxy)->m_boardsize = 19;
 	((_zen_dll_proxy*)m_proxy)->m_curmovenum = 0;
 	((_zen_dll_proxy*)m_proxy)->m_maintime = microsec_clock::universal_time() + days(365);
@@ -331,7 +331,7 @@ std::string CZen7Gtp::list_commands()
 
 std::string CZen7Gtp::name()
 {
-	return "= Gtp4Zen(zen7)\n";
+	return "= GTP4Zen7\n";
 }
 
 std::string CZen7Gtp::version()
@@ -425,7 +425,7 @@ std::string CZen7Gtp::play(std::string _color, std::string position)
 	if (position.length() < 2 || position.length() > 3)
 		return "? error parameter\n";
 
-	// ×ª»»×ø±ê
+	// è½¬æ¢åæ ‡
 	int pos_x = __ansi2num(position[0]);
 	if (pos_x < 0)
 		return "? error parameter\n";
@@ -434,7 +434,7 @@ std::string CZen7Gtp::play(std::string _color, std::string position)
 		return "? error parameter\n";
 	pos_y = ((_zen_dll_proxy*)m_proxy)->m_boardsize - pos_y;
 
-	// Âä×Ó
+	// è½å­
 	//logprintf(L"ZenPlay(%d, %d, %d)", pos_x, pos_y, color);
 	((_zen_dll_proxy*)m_proxy)->winrate = "";
 	bool result = ((_zen_dll_proxy*)m_proxy)->ZenPlay(pos_x, pos_y, color);
@@ -444,15 +444,15 @@ std::string CZen7Gtp::play(std::string _color, std::string position)
 		return "? error parameter\n";
 }
 
-// XºÍYÊÇ×ø±ê, simulationÄ£Äâ²½Êı£¨zen¼ÆËãÁ¿£©
+// Xå’ŒYæ˜¯åæ ‡, simulationæ¨¡æ‹Ÿæ­¥æ•°ï¼ˆzenè®¡ç®—é‡ï¼‰
 std::string CZen7Gtp::__find_best_move(bool debug, int &x, int &y, int &simulation, float &W)
 {
-	// Ñ°ÕÒ×îÓÅ
+	// å¯»æ‰¾æœ€ä¼˜
 	int N = -1;
-	char S[256];	// È«²¿ÊÖÊı£¨º¬µ±Ç°ÊÖ£©
+	char S[256];	// å…¨éƒ¨æ‰‹æ•°ï¼ˆå«å½“å‰æ‰‹ï¼‰
 #if 1
 	std::string result = "pass";
-	for (int i = 4; i >= 0; i--) {	// zenÒ»°ã¸ø³ö5¸öÑ¡µã
+	for (int i = 4; i >= 0; i--) {	// zenä¸€èˆ¬ç»™å‡º5ä¸ªé€‰ç‚¹
 		((_zen_dll_proxy*)m_proxy)->ZenGetTopMoveInfo(i, x, y, simulation, W, S, 99);
 		//XTRACE("%d:  %d-%d, P:%d, W:%f,  %s\n", i, x, y, simulation, W, S);
 		if (debug) {
@@ -512,7 +512,7 @@ std::string CZen7Gtp::__find_best_move(bool debug, int &x, int &y, int &simulati
 	return "pass";
 }
 
-// Ö¸¶¨×î´óÊ±¼ä£¨ºÁÃë£©£¬×î¶à²½Êı
+// æŒ‡å®šæœ€å¤§æ—¶é—´ï¼ˆæ¯«ç§’ï¼‰ï¼Œæœ€å¤šæ­¥æ•°
 std::string CZen7Gtp::__genmove(std::string _color, int _maxtime, int _strength)
 {
 	logprintf(L"__genmove(%s, %dms, %dstep)", (LPCTSTR)CAtoW(_color.c_str()), _maxtime, _strength);
@@ -521,7 +521,7 @@ std::string CZen7Gtp::__genmove(std::string _color, int _maxtime, int _strength)
 		return "? error parameter\n";
 	int color = ("w" == _color ? GTP4ZEN_COLOR_WHITE : GTP4ZEN_COLOR_BLACK);
 
-	// Âä×Ó
+	// è½å­
 	((_zen_dll_proxy*)m_proxy)->ZenSetNumberOfSimulations(_strength);
 	((_zen_dll_proxy*)m_proxy)->ZenSetPnLevel(g_think_level_0);
 	((_zen_dll_proxy*)m_proxy)->ZenSetPnWeight(g_think_level_1);
@@ -536,7 +536,7 @@ std::string CZen7Gtp::__genmove(std::string _color, int _maxtime, int _strength)
 	while (true) {
 		if (!((_zen_dll_proxy*)m_proxy)->ZenIsThinking()) {
 			reason = L"zen stop thinking";
-			break;		// ÔÚĞ¡ÓÚÖ¸¶¨µÄÊ±¼äÄÚËãºÃÁË
+			break;		// åœ¨å°äºæŒ‡å®šçš„æ—¶é—´å†…ç®—å¥½äº†
 		}
 
 		time_now = microsec_clock::universal_time();
@@ -584,7 +584,7 @@ std::string CZen7Gtp::__genmove(std::string _color, int _maxtime, int _strength)
 }
 
 // genmove b
-// genmove()µ¥Î»ÊÇÃë£¬__genmove()µ¥Î»ÊÇºÁÃë
+// genmove()å•ä½æ˜¯ç§’ï¼Œ__genmove()å•ä½æ˜¯æ¯«ç§’
 std::string CZen7Gtp::genmove(std::string _color)
 {
 	ptime time_now = microsec_clock::universal_time();
@@ -597,18 +597,18 @@ std::string CZen7Gtp::genmove(std::string _color)
 	std::string result;
 	int calctime = lua_genmove_calctime(((_zen_dll_proxy*)m_proxy)->m_curmovenum, (int)left_time_millseconds);
 	if (calctime > 0) {
-		// lua½Å±¾ÖĞ·µ»ØÁËÊ±¼ä
+		// luaè„šæœ¬ä¸­è¿”å›äº†æ—¶é—´
 		logprintf(L"\tlua script return calctime: %dms", calctime);
 		result = __genmove(_color, calctime, g_strength);
 	} else {
 		if (left_time_millseconds >= 180 * 1000) {
-			// Ê±¼ä´óÓÚ180Ãë£¬Ëæ±ãÓÃ
+			// æ—¶é—´å¤§äº180ç§’ï¼Œéšä¾¿ç”¨
 			result = __genmove(_color, g_maxtime * 1000, g_strength);
 		} else if (left_time_millseconds >= 90 * 1000) {
-			// Ğ¡ÓÚ180Ãë£¬´óÓÚ90Ãë£ºÃ¿ÊÖ×î¶à2ÃëÖÓ
+			// å°äº180ç§’ï¼Œå¤§äº90ç§’ï¼šæ¯æ‰‹æœ€å¤š2ç§’é’Ÿ
 			result = __genmove(_color, 2000, g_strength);
 		} else {
-			// Ğ¡ÓÚ90Ãë£¬Ã¿ÊÖ
+			// å°äº90ç§’ï¼Œæ¯æ‰‹
 			result = __genmove(_color, 100, g_strength);
 		}
 	}
@@ -625,7 +625,7 @@ std::string CZen7Gtp::undo()
 	return "= \n";
 }
 
-// main_timeÊÇÖ÷ÒªÊ±¼ä£¬byo_yomi_timeÊÇ¶ÁÃëÊ±¼ä£¬byo_yomi_stonesÊÇ¶ÁÃë´ÎÊı
+// main_timeæ˜¯ä¸»è¦æ—¶é—´ï¼Œbyo_yomi_timeæ˜¯è¯»ç§’æ—¶é—´ï¼Œbyo_yomi_stonesæ˜¯è¯»ç§’æ¬¡æ•°
 std::string CZen7Gtp::time_settings(int main_time, int byo_yomi_time, int byo_yomi_stones)
 {
 	logprintf(L"time_settings(%d, %d, %d)", main_time, byo_yomi_time, byo_yomi_stones);
@@ -634,7 +634,7 @@ std::string CZen7Gtp::time_settings(int main_time, int byo_yomi_time, int byo_yo
 	return "= \n";
 }
 
-// Èç¹ûÔÚÖ÷ÒªÊ±¼äÄÚ£¬stonesÊÇ0£»½øÈë¶ÁÃëºóstonesÊÇ¶ÁÃë´ÎÊı
+// å¦‚æœåœ¨ä¸»è¦æ—¶é—´å†…ï¼Œstonesæ˜¯0ï¼›è¿›å…¥è¯»ç§’åstonesæ˜¯è¯»ç§’æ¬¡æ•°
 std::string CZen7Gtp::time_left(std::string color, int time, int stones)
 {
 	logprintf(L"time_left(%s, %d, %d)", (LPCTSTR)CAtoW(color.c_str()), time, stones);

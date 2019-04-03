@@ -1,4 +1,4 @@
-// gtp4zen.cpp : Defines the entry point for the console application.
+ï»¿// gtp4zen.cpp : Defines the entry point for the console application.
 //
 
 #include "stdafx.h"
@@ -15,15 +15,15 @@ static void _play_zen(CGtp *pgtp);
 
 int g_zenver = 7;
 int g_threads = 1;
-int g_maxtime = 60;			// Ãë£¬Ä¬ÈÏ60Ãë
-int g_strength = 10000;			// ²½Êı£¬Ä¬ÈÏ10000²½
+int g_maxtime = 180;			// default 180 seconds
+int g_strength = 25000;			// default 25000 strength
 bool g_logfilenametime = false;
 bool g_debug = false;
 int g_think_interval = 200;
+int g_think_level_0 = 3;
 float g_think_level_1 = 1.0;
-float g_think_level_2 = 1.0;
-int g_think_level_0 = 1;
-int g_resign = 10;
+float g_think_level_2 = 0.75;
+int g_resign = 20;
 bool g_chinese_rule = true;
 
 #ifdef _DEBUG
@@ -32,7 +32,7 @@ string g_logfile = "gtp4zen_log.txt";
 string g_logfile = "";
 #endif
 
-// »ñÈ¡µ±Ç°Â·¾¶
+// è·å–å½“å‰è·¯å¾„
 inline std::string GetModuleFilePath()
 {
 	TCHAR buffer[MAX_PATH] = L"";
@@ -55,34 +55,25 @@ int _tmain(int argc, _TCHAR* argv[])
 	g_threads = sysInfo.dwNumberOfProcessors;
 
 #if 1
-	// ÃüÁîĞĞ½âÎö(Ê¹ÓÃboost)
+	// å‘½ä»¤è¡Œè§£æ(ä½¿ç”¨boost)
 	options_description opts("Options");
 	opts.add_options()
 		("help,h", "Show all allowed options.")
 		("zenverion,z",value<int>(),    "Version of zen.dll, must be 6 or 7. (default 7)")
 		("threads,t",  value<int>(),    "Set the number of threads to use. (default CPU_CORES)")
-		("maxtime,T",  value<int>(),    "Set the max time for one move. (default 10 seconds)")
-		("strength,s", value<int>(),    "Set the playing strength. (default 10000)")
+		("maxtime,T",  value<int>(),    "Set the max time for one move. (default 180 seconds)")
+		("strength,s", value<int>(),    "Set the playing strength. (default 25000)")
 		("ithink,i", value<int>(),      "thinking interval, only set 100 when play cgos. (default 100)")
-		("ilevel0,n", value<int>(),     "factor0. (default 1)")
-		("ilevel1,o", value<float>(),   "factor1. (default 1)")
-		("ilevel2,p", value<float>(),   "factor2. (default 1)")
+		("ilevel0,n", value<int>(),     "factor0. (default 3)")
+		("ilevel1,o", value<float>(),   "factor1. (default 1.0)")
+		("ilevel2,p", value<float>(),   "factor2. (default 0.75)")
 		("resign,r", value<int>(),      "resign. (default 10)")
 		("logfile,l", value<string>(),  "Enable logging and set the log file. (default none)")
 		("logfilenametime,L",           "Add timestamp after log filename. (default off)")
 		("debug,d",                     "Enable debug output to gtp shell. (default off)")
 		("jpn_rules",                   "Set to Japanese rules. (default Chinese rules)")
 		;
-	/*
-	Ñ¡Ïî -t -T -M -m -l -k -w -s -f
-	-t Ïß³ÌÊı (Ä¬ÈÏ1)
-	-T Ã¿²½mc¼ÆËãÊ±¼ä (²»°üÀ¨Ñ¡µãÊ±¼ä, ²»½¨ÒéÉèÖÃ, ÒòÎª»áµ¼ÖÂÆåÁ¦²»ÎÈ¶¨)
-	-M Ã¿²½Ê×Î»Ä£ÄâÁ¿ÉÏÏŞ (²»ÊÇÑÏ¸ñµÄ, Óë»úÆ÷ĞÔÄÜÏà¹Ø)
-	-m Ã¿²½ºòÑ¡µãÄ£ÄâÁ¿ÏÂÏŞ (Êµ¼Ê°´M,m±ÈÀı)
-	-l ¼ÇÂ¼ÎÄ¼ş (Ä¬ÈÏÎª ÈÕÆÚÊ±¼ä-ÈıÎ»Ëæ»úÊı.log)
-	-k -w -s -f ÎªÆåÁ¦²ÎÊıÉèÖÃ (Ä¬ÈÏ -k0 -w0.5 -s0.25,0.25 -f1.1)
-	ÆåÁ¦²ÎÊı¿ÉÒÔ³¢ÊÔĞŞ¸Ä£¬±ÈÈç¿ÉÄÜ -k-6 »áÉÔºÃ£¬µ«ÔİÎŞÃ÷È·½áÂÛ¡£
-	*/
+
 	try {
 		bool error_options = false;;
 		variables_map vm;
@@ -98,7 +89,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			g_debug = true;
 		}
 		if (vm.count("zenverion")) {
-			// zen.dll°æ±¾
+			// zen.dllç‰ˆæœ¬
 			g_zenver = vm["zenverion"].as<int>();
 			if (6 != g_zenver && 7 != g_zenver) {
 				error_options = true;
@@ -160,7 +151,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 #endif
 
-	// ÎÄ¼şÃûÊÇ·ñ¼ÓÊ±¼ä
+	// æ–‡ä»¶åæ˜¯å¦åŠ æ—¶é—´
 	string filename = g_logfile;
 	if (g_logfilenametime) {
 		const char *p1 = strrchr(filename.c_str(), '/');
@@ -203,12 +194,12 @@ int _tmain(int argc, _TCHAR* argv[])
 		g_logfile = filename;
 	}
 
-	logprintf(L"%s", L"========³ÌĞògtp4zenÆô¶¯========");
-	logprintf(L"CPUºËÊı£º%d", sysInfo.dwNumberOfProcessors);
-	logprintf(L"ZEN°æ±¾£º%d", g_zenver);
-	logprintf(L"Ïß³ÌÊıÁ¿£º%d", g_threads);
-	logprintf(L"Ã¿ÊÖ×î´óË¼¿¼Ê±¼ä£¨Ãë£©£º%d", g_maxtime);
-	logprintf(L"Ã¿ÊÖ×î´óÄ£Äâ²½Êı£¨²½£©£º%d", g_strength);
+	logprintf(L"%s", L"========ç¨‹åºgtp4zenå¯åŠ¨========");
+	logprintf(L"CPUæ ¸æ•°ï¼š%d", sysInfo.dwNumberOfProcessors);
+	logprintf(L"ZENç‰ˆæœ¬ï¼š%d", g_zenver);
+	logprintf(L"çº¿ç¨‹æ•°é‡ï¼š%d", g_threads);
+	logprintf(L"æ¯æ‰‹æœ€å¤§æ€è€ƒæ—¶é—´ï¼ˆç§’ï¼‰ï¼š%d", g_maxtime);
+	logprintf(L"æ¯æ‰‹æœ€å¤§æ¨¡æ‹Ÿæ­¥æ•°ï¼ˆæ­¥ï¼‰ï¼š%d", g_strength);
 
 	std::string zen_dll_path = GetModuleFilePath();
 	std::string lua_engine_path = GetModuleFilePath() + "gtp4zen.lua";
@@ -313,13 +304,13 @@ static void _play_zen(CGtp *pgtp)
 		} else if ("undo" == list[0]) {
 			result = pgtp->undo();
 		} else if ("time_settings" == list[0] && list.size() >= 4) {
-			// ÉèÖÃ×ÜÊ±¼ä
+			// è®¾ç½®æ€»æ—¶é—´
 			result = pgtp->time_settings(atoi(list[1].c_str())
 				, atoi(list[2].c_str())
 				, atoi(list[3].c_str())
 				);
 		} else if ("time_left" == list[0] && list.size() >= 4) {
-			// Ã¿´Î¶Ô·½»ò×Ô¼ºÂä×Ó¾Í¸üĞÂ×Ô¼ºµÄÊ±¼ä
+			// æ¯æ¬¡å¯¹æ–¹æˆ–è‡ªå·±è½å­å°±æ›´æ–°è‡ªå·±çš„æ—¶é—´
 			result = pgtp->time_left(list[1].c_str()
 				, atoi(list[2].c_str())
 				, atoi(list[3].c_str())
@@ -365,14 +356,14 @@ std::string __num2ansi(int x, int y, int boardsize)
 
 void logprintf(const TCHAR *_Format, ...)
 {
-	// ¿É±ä²ÎÊı
+	// å¯å˜å‚æ•°
 	TCHAR pszBuffer[1024] = L"";
 	va_list ap;
 	va_start(ap, _Format);
 	vswprintf_s(pszBuffer, 1024, _Format, ap);
 	va_end(ap);
 
-	// Ğ´ÎÄ¼ş
+	// å†™æ–‡ä»¶
 	ofstream out;
 	if (g_logfile.size() > 0) {
 		out.open(g_logfile.c_str(), ios::app | ios::out | ios::binary);

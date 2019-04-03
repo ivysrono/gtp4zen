@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <tchar.h>
 
-
 // TODO: reference additional headers your program requires here
 #include <string>
 #include <fstream>
@@ -43,6 +42,6 @@ extern int __ansi2num(char ch);
 extern std::string __num2ansi(int x, int y, int boardsize);
 extern void logprintf(const TCHAR *_Format, ...);
 
-#define GTP4ZEN_VERSION			"v0.3.5"
+#define GTP4ZEN_VERSION			"0.3.5"
 #define GTP4ZEN_COLOR_WHITE		1
 #define GTP4ZEN_COLOR_BLACK		2

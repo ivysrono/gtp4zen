@@ -1,38 +1,35 @@
-将zen6或者zen7转成命令行gtp。代码依赖boost（附boost props），开发环境vs2013update5。
+原作将 Zen6 或者 Zen7 转成命令行 GTP，开发环境：Windows XP + VS2013 Update5 + Boost 1.64.
 
-使用了lua脚本可以自定义时间，代码写的很烂，没有版权，随便使用。
+本 Fork 主要更新如下：
 
-使用说明：
+开发环境：将 Windows VS Boost 均更新至最新稳定版。
 
-1. 把zen7的zen.dll拷贝到gtp4zen.exe所在的文件夹，再运行即可，只需要gtp4zen.exe和zen.dll这2个文件
-请参考gtp指令手册(http://www.lysator.liu.se/~gunnar/gtp/)或者使用sabaki等图形界面工具  
-2. 如果使用zen6的zen.dll，需要设置参数 gtp4zen.exe -z6。如果你需要**同时使用zen6和zen7的dll**，请在gtp4zen.exe所在的文件夹下再建立两个子目录并分别命名为"6"和"7"，再把两个dll复制进去
-3. gtp4zen.exe所在的文件夹如果存在gtp4zen.lua，命令行-T参数自动失效并使用gtp4zen.lua的时间控制，这个脚本用于精细化时间控制，如果不明白用途可以删除gtp4zen.lua，文件存在即表示生效  
-4. gtp4zen.exe --help输出帮助,-t是线程数（默认和cpu核数量相同），-T最大思考时间，-s最大计算步数，-l指定log文件，-d会输出调试信息到gtpshell，帮助信息如下：
+项目设置：移除 `Debug` 解决方案；修改编译输出中间目录；默认运行库为 `MultiThreadedDLL` 故依赖 [VC++ 2015-2019 x86](https://aka.ms/vs/16/release/vc_redist.x86.exe) —— 该项对应设置：`项目属性 - 配置属性 - C/C++ - 代码生成 - 运行库`，否则无法正确识别 Boost 库。
 
-C:\Users\clock\Desktop>gtp4zen.exe --help
+默认参数：参考 [GoAIRatings](https://github.com/breakwa11/GoAIRatings/blob/master/AIcmds.md#zen7-gtp4zen)，默认设为 Zen7 最强。
 
-    Options:
-      -h [ --help ]             Show all allowed options.
-      -z [ --zenverion ] arg    Version of dll, must be 6 or 7. (default 7)
-      -t [ --threads ] arg      Set the number of threads to use. (default
-                                CPU_CORES)
-      -T [ --maxtime ] arg      Set the max time for one move. (default 10 seconds)
-      -s [ --strength ] arg     Set the max playout. (default 10000)
-      -i [ --ithink ] arg       thinking interval, only set 100 when play cgos.
-                                (default 100)
-      -n [ --ilevel0 ] arg      factor0. (default 1)
-      -o [ --ilevel1 ] arg      factor1. (default 1)
-      -p [ --ilevel2 ] arg      factor2. (default 1)
-      -r [ --resign ] arg       resign. (default 10)
-      -l [ --logfile ] arg      Enable logging and set the log file. (default none)
-      -L [ --logfilenametime ]  Add timestamp after log filename. (default off)
-      -d [ --debug ]            Enable debug output to gtp shell. (default off)
+GTP 输出：版本号为纯数字，避免带 `v` 时第一个小数点前出现空格；应用名随调用的 `Zen.dll` 版本而变为 `GTP4Zen7` 或 `GTP4Zen6`。
 
-其中 n,o,p 三个参数由你使用zen6还是zen7决定其含义，具体可参考Github项目GoAIRating  
-以上3个参数如不指定，棋力将达不到预想值。  
-如果你单纯需要最强的棋力，如果是zen6，设置-n1 -o1 -p1（即默认值），如果是zen7，设置-n3 -o1 -p0.75  
-参数 r 设置胜率低于多少时认输
+文件编码：将 `gtp4zen.cpp` `zen6gtp.cpp` `zen7gtp.cpp` 三个文件编码从 `GB2312` 转为 `UTF-8+BOM`，使 VSCode 和 Github 等 PC 软件可以正确读取中文注释且 VS 编译不报错。
 
+其他改进：修订文字说明；增加简易编译步骤；等等。
 
-作者：拥剑：qq80101277
+……
+
+Windows 10 编译步骤如下：
+
+下载 [Boost C++ Libraries](https://www.boost.org/)，解压。
+
+默认将 Boost 库置于 `D:\Libs\`。如需自定义 Boost 版本或目录，请修改 `/gtp4zen/boost-static.props` 中相应字段，切记以 `\` 结尾。
+
+需部分编译 Boost：
+
+`cd Boost`
+
+`bootstrap.bat`
+
+`b2.exe --with-date_time --with-filesystem --with-program_options`
+
+用 VS 打开 `gtp4zen.sln` 文件，直接编译即可。
+
+以 x64 编译的 gtp4zen.exe 无法识别 32 位的 `zen.dll`，故仅提供 win32 版。
