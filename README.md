@@ -26,9 +26,9 @@ Windows 10 编译步骤如下：
 
 `cd Boost`
 
-`bootstrap.bat`
+`.\bootstrap.bat`
 
-`b2.exe --with-date_time --with-filesystem --with-program_options`
+`.\b2.exe --with-date_time --with-filesystem --with-program_options`
 
 用 VS 打开 `gtp4zen.sln` 文件，直接编译即可。
 
