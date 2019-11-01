@@ -20,3 +20,5 @@ obj
 
 *.dpbcd
 *.nlb
+
+*.vcxproj.user
