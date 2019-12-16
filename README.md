@@ -20,7 +20,7 @@ Windows 10 编译步骤如下：
 
 下载 [Boost C++ Libraries](https://www.boost.org/)，解压。
 
-默认将 Boost 库置于 `D:\Libs\`。如需自定义 Boost 版本或目录，请修改 `/gtp4zen/boost-static.props` 中相应字段，切记以 `\` 结尾。
+默认将 Boost 库置于 `D:\Libs\Boost`。如需自定义 Boost 版本或目录，请修改 `/gtp4zen/boost-static.props` 中相应字段，切记以 `\` 结尾。
 
 需部分编译 Boost：
 
